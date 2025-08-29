@@ -4,7 +4,7 @@ from pymongo import MongoClient
 from datetime import datetime
 
 # === CONFIG ===
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YWNhODc5Njk1MTgwZDE0NzlmOTU4YiIsImlzcyI6Imt1YWxpLmNvIiwiZXhwIjoxNzg3NjgxNzg1LCJpYXQiOjE3NTYxNDU3ODV9.fzRrA6GoSbwwtNlyx33CIYuI5pjZQSyn64y58SFuK5I"
+TOKEN = ""
 URL = "https://york-sbx.kuali.co/api/v0/cm/search"
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
@@ -101,3 +101,4 @@ def upload_to_mongodb(json_file, timestamp, db_name="kuali", collection_prefix="
 if __name__ == "__main__":
     json_path, ts = fetch_all_prefix_courses()
     upload_to_mongodb(json_path, ts)
+
