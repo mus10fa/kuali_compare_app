@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Comparison Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .search-section {
+            padding: 30px 40px 20px;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #ddd;
+            border-radius: 50px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+            background: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .search-results-info {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .selection-section {
+            padding: 40px;
+            background: white;
+        }
+
+        .file-selection-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .file-selector {
+            background: #f8f9ff;
+            border: 2px solid #667eea;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .file-selector:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.1);
+        }
+
+        .file-selector h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .file-selector select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-selector select:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #1976d2;
+            display: none;
+        }
+
+        .compare-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 0 auto;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .compare-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .compare-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .available-collections {
+            background: #f0f7ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .available-collections h3 {
+            color: #0066cc;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .refresh-btn {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .collection-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .collection-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .collection-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .collection-item.hidden {
+            display: none;
+        }
+
+        .collection-name {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .collection-meta {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .loading-indicator {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+
+        .results-section {
+            display: none;
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .results-header h2 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .pdf-export-btn {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pdf-export-btn:hover {
+            transform: translateY(-50%) translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .pdf-export-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: translateY(-50%);
+            box-shadow: none;
+        }
+
+        .comparison-info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-info p {
+            margin: 5px 0;
+            font-size: 1rem;
+        }
+
+        .no-differences {
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 20px 0;
+        }
+
+        .course-diff {
+            background: white;
+            margin: 20px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .course-diff:hover {
+            transform: translateY(-3px);
+        }
+
+        .course-header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .outcome-diff {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .outcome-diff:last-child {
+            border-bottom: none;
+        }
+
+        .outcome-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .diff-item {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .diff-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .diff-values {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .diff-value {
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .desc-text .diff-value {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .previous {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .current {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .file-selection-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .diff-values {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .collection-list {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .selection-section, .search-section {
+                padding: 20px;
+            }
+
+            .results-header {
+                text-align: left;
+            }
+
+            .pdf-export-btn {
+                position: static;
+                transform: none;
+                margin-top: 15px;
+                align-self: flex-start;
+            }
+
+            .pdf-export-btn:hover {
+                transform: translateY(-2px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Course Comparison Tool</h1>
+            <p>Compare course attributes between different versions of course data</p>
+        </div>
+
+        <div class="search-section">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Search collections by timestamp, course count..."
+                >
+                <div class="search-icon">🔍</div>
+            </div>
+            <div class="search-results-info" id="searchResultsInfo"></div>
+        </div>
+
+        <div class="selection-section">
+            <div class="available-collections">
+                <h3>
+                    📊 Available Course Collections
+                    <button class="refresh-btn" id="refreshBtn" onclick="loadAvailableCollections()">
+                        🔄 Refresh
+                    </button>
+                </h3>
+                <div id="loadingIndicator" class="loading-indicator">
+                    <div class="spinner"></div>
+                    Loading collections from MongoDB...
+                </div>
+                <div class="collection-list" id="collectionList" style="display: none;">
+                    <!-- Collections will be populated here -->
+                </div>
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+            </div>
+
+            <div class="file-selection-container">
+                <div class="file-selector">
+                    <h3>📄 Previous Course Data</h3>
+                    <select id="collection1Select">
+                        <option value="">Select a collection...</option>
+                    </select>
+                    <div class="file-info" id="info1"></div>
+                </div>
+
+                <div class="file-selector">
+                    <h3>📄 Current Course Data</h3>
+                    <select id="collection2Select">
+                        <option value="">Select a collection...</option>
+                    </select>
+                    <div class="file-info" id="info2"></div>
+                </div>
+            </div>
+
+            <button class="compare-btn" id="compareBtn" disabled>
+                Compare Collections
+            </button>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h2>Comparison Results</h2>
+                <button class="pdf-export-btn" id="pdfExportBtn" disabled>
+                    📄 Export PDF
+                </button>
+            </div>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update this to your backend API URL
+        // Graduate Attribute Indicator (GAI) mappings
+        const GAI_MAPPINGS = {
+            "e752ac4b-88d6-4587-b673-96af25ce4f29": "N/A",
+            "597f6e94b2eebc0100d76ce9": "01a - Demonstrate competence in mathematics",
+            "15abee20-c122-430e-abfc-51cc35f5f2eb": "01b - Demonstrate foundational knowledge of natural sciences",
+            "8e104409-5550-48fb-ad39-8b96667d69f1": "01c - Demonstrate knowledge of engineering fundamentals",
+            "2a8fc083-c808-4449-ae15-eab378a3b876": "01d - Demonstrate competence in specialized engineering knowledge",
+            "f816df2e-2af7-43c2-b5af-447f3fd72ef6": "02a - Formulate engineering problems",
+            "5b70f4a5-a6ca-4bbc-b992-95baac41e170": "02b - Solve engineering problems",
+            "23399a4e-3e98-47b9-b3f2-752b76427503": "02c - Evaluate solutions to engineering problems",
+            "fb0b3603-cc63-4df3-a30c-41bc80d7d6ed": "03a - Demonstrate ability to plan the investigation of engineering problems",
+            "bc0911d0-002c-4ac4-b2cc-25557d1a680c": "03b - Demonstrate ability to collect data from experiments to investigate engineering problems",
+            "597f3afd0004e60100c407aa": "03c - Demonstrate ability to synthesize data from experiments to investigate engineering problems",
+            "597f3de232d692010063f021": "04a - Identify requirements and specifications for complex, open-ended engineering design problems",
+            "597f40160004e60100c407b4": "04b - Decompose complex systems into smaller, more manageable sub-systems",
+            "597f401de062420100c0f867": "04c - Develop and refine design solutions considering constraints including but not limited to health and safety risks, applicable standards, economic, environmental, cultural and societal considerations",
+            "597f6f19c9423e01000793f8": "04d - Evaluate and compare engineering design solutions to advance to a final design",
+            "597f409306ea6a010010a24d": "05a - Select appropriate techniques, resources, and modern engineering tools",
+            "597f409732d692010063f025": "05b - Apply appropriate techniques, resources, and modern engineering tools with identifications of limitations",
+            "597f40990004e60100c407b6": "05c - Extend, adapt, or create appropriate techniques, resources, and modern engineering tools",
+            "597f40a606ea6a010010a250": "06a - Establish and review team organizations, goals, and responsibilities",
+            "597f40fe06ea6a010010a253": "06b - Contribute as an active team member or leader to complete individual tasks",
+            "597f410132d692010063f027": "06c - Collaborate with others to complete team goals effectively",
+            "597f41490004e60100c407bc": "07a - Understand, interpret, and identify engineering knowledge from oral, written, or graphical communications",
+            "597f414d06ea6a010010a255": "07b - Orally present complex engineering concepts within the profession and to society at large",
+            "597f414f0004e60100c407bd": "07c - Produce written engineering reports and design documentation",
+            "597f454e0004e60100c407cb": "08a - Understand the role of the professional engineer in society, licensing, and the duty to protect the public interest",
+            "597f4551e062420100c0f875": "08b - Describe the importance of standards, codes, regulations, best practices, laws, compliance with the Professional Engineers Act, and health and safety in engineering",
+            "597f45a5e062420100c0f876": "09a - Explain the relationship and impact of engineering projects on economic, health, safety, legal, and society issues and values",
+            "597f45a832d692010063f039": "09b - Evaluate the uncertainties and limitations in assessing the impact of engineering activities on economic, social, health, safety, legal, and cultural aspects of society",
+            "59a81cb930be8f01008ef163": "10a - Explain ethical behaviour, value of decolonization, equity, diversity, and inclusion (DEDI), and importance of accountability in the workplace",
+            "597f6feb0e2f86010010d025": "10b - Apply professional codes of ethics to engineering practices with respect to the role and responsibilities of individuals",
+            "597f7231c9423e0100079418": "11a - Apply economic principles to support decision making and identify limitations of economics and business practices in engineering",
+            "597f7240611b770100a94c4a": "11b - Implement management process, build and monitor a project schedule based on tasks, milestones, and project risks, and make adjustments over time based on project status",
+            "597f727b0e2f86010010d035": "12a - Identify gaps in their knowledge, skills, and abilities",
+            "597f7285b2eebc0100d76d07": "12b - Obtain and evaluate information or training from appropriate sources",
+            "597f72930e2f86010010d037": "12c - Develop goals and long term plans for continued learning to maintain professional standing"
+        };
+
+        // Graduate Attribute Map Level (GAML) mappings
+        const GAML_MAPPINGS = {
+            "59690b281389620100bde362": "Applied/Used",
+            "59690b231389620100bde361": "Developed",
+            "59690b4d4f4179010001c315": "Developed & Applied",
+            "59690b1f1389620100bde360": "Introduced",
+            "59690b384f4179010001c314": "Introduced & Applied",
+            "59690b31d031df0100a0660b": "Introduced & Developed",
+            "59690b5f1389620100bde363": "Introduced, Developed & Applied"
+        };
+
+        const API_BASE_URL = 'http://localhost:3000/api'; // Change to your backend URL
+        
+        let availableCollections = [];
+        let selectedCollection1 = null;
+        let selectedCollection2 = null;
+        let searchTimeout = null;
+        let currentComparisons = null;
+
+        // Initialize the application
+        async function init() {
+            setupEventListeners();
+            await loadAvailableCollections();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('collection1Select').addEventListener('change', (e) => handleCollectionSelection(e, 1));
+            document.getElementById('collection2Select').addEventListener('change', (e) => handleCollectionSelection(e, 2));
+            document.getElementById('compareBtn').addEventListener('click', compareCollections);
+            document.getElementById('pdfExportBtn').addEventListener('click', exportToPDF);
+            document.getElementById('searchInput').addEventListener('input', handleSearch);
+            
+            // Click on collection items to select them
+            document.getElementById('collectionList').addEventListener('click', handleCollectionItemClick);
+        }
+
+        async function loadAvailableCollections() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const collectionList = document.getElementById('collectionList');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            loadingIndicator.style.display = 'block';
+            collectionList.style.display = 'none';
+            errorMessage.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/collections`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const collections = await response.json();
+                
+                // Sort collections by timestamp (newest first)
+                availableCollections = collections.sort((a, b) => {
+                    const timestampA = parseTimestampFromCollection(a.name);
+                    const timestampB = parseTimestampFromCollection(b.name);
+                    return timestampB - timestampA;
+                });
+                
+                populateCollectionList(availableCollections);
+                populateSelectOptions(availableCollections);
+                updateSearchResults(availableCollections.length, availableCollections.length);
+                
+                loadingIndicator.style.display = 'none';
+                collectionList.style.display = 'grid';
+                
+            } catch (error) {
+                console.error('Error loading collections:', error);
+                loadingIndicator.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.innerHTML = `
+                    <strong>Error loading collections:</strong> ${error.message}<br>
+                    <small>Make sure your backend server is running at ${API_BASE_URL}</small>
+                `;
+            }
+        }
+
+        function parseTimestampFromCollection(collectionName) {
+            // Parse timestamp from collection name like "courses_202412011430"
+            const match = collectionName.match(/courses_(\d{12})/);
+            if (match) {
+                const timestampStr = match[1];
+                const year = timestampStr.substring(0, 4);
+                const month = timestampStr.substring(4, 6);
+                const day = timestampStr.substring(6, 8);
+                const hour = timestampStr.substring(8, 10);
+                const minute = timestampStr.substring(10, 12);
+                
+                return new Date(year, month - 1, day, hour, minute);
+            }
+            return new Date(0); // fallback for invalid formats
+        }
+
+        function formatTimestamp(collectionName) {
+            const date = parseTimestampFromCollection(collectionName);
+            return date.getTime() > 0 ? date.toLocaleString() : 'Unknown date';
+        }
+
+        function populateCollectionList(collections) {
+            const collectionList = document.getElementById('collectionList');
+            
+            if (collections.length === 0) {
+                collectionList.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No collections found</div>';
+                return;
+            }
+            
+            collectionList.innerHTML = collections.map(collection => `
+                <div class="collection-item" data-collection-name="${collection.name}">
+                    <div class="collection-name">${collection.name}</div>
+                    <div class="collection-meta">
+                        📅 ${formatTimestamp(collection.name)} | 
+                        📚 ${collection.documentCount} courses
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function populateSelectOptions(collections) {
+            const collection1Select = document.getElementById('collection1Select');
+            const collection2Select = document.getElementById('collection2Select');
+            
+            // Clear existing options except the first one
+            collection1Select.innerHTML = '<option value="">Select a collection...</option>';
+            collection2Select.innerHTML = '<option value="">Select a collection...</option>';
+            
+            collections.forEach(collection => {
+                const displayName = `${collection.name} (${collection.documentCount} courses)`;
+                const option1 = new Option(displayName, collection.name);
+                const option2 = new Option(displayName, collection.name);
+                collection1Select.add(option1);
+                collection2Select.add(option2);
+            });
+        }
+
+        function handleSearch(event) {
+            const query = event.target.value.toLowerCase().trim();
+            
+            // Debounce search
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        }
+
+        function performSearch(query) {
+            if (!query) {
+                // Show all collections
+                const collectionItems = document.querySelectorAll('.collection-item');
+                collectionItems.forEach(item => {
+                    item.classList.remove('hidden');
+                });
+                updateSearchResults(availableCollections.length, availableCollections.length);
+                return;
+            }
+
+            const filteredCollections = availableCollections.filter(collection => 
+                collection.name.toLowerCase().includes(query) ||
+                formatTimestamp(collection.name).toLowerCase().includes(query) ||
+                collection.documentCount.toString().includes(query)
+            );
+
+            const collectionItems = document.querySelectorAll('.collection-item');
+            let visibleCount = 0;
+
+            collectionItems.forEach(item => {
+                const collectionName = item.dataset.collectionName;
+                const shouldShow = filteredCollections.some(collection => collection.name === collectionName);
+                
+                if (shouldShow) {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            updateSearchResults(visibleCount, availableCollections.length);
+        }
+
+        function updateSearchResults(visible, total) {
+            const info = document.getElementById('searchResultsInfo');
+            if (visible === total) {
+                info.textContent = `Showing all ${total} collections`;
+            } else {
+                info.textContent = `Showing ${visible} of ${total} collections`;
+            }
+        }
+
+        function handleCollectionItemClick(event) {
+            const collectionItem = event.target.closest('.collection-item');
+            if (!collectionItem) return;
+
+            const collectionName = collectionItem.dataset.collectionName;
+            
+            // Auto-select in the first available dropdown
+            const collection1Select = document.getElementById('collection1Select');
+            const collection2Select = document.getElementById('collection2Select');
+            
+            if (!collection1Select.value) {
+                collection1Select.value = collectionName;
+                collection1Select.dispatchEvent(new Event('change'));
+            } else if (!collection2Select.value && collection1Select.value !== collectionName) {
+                collection2Select.value = collectionName;
+                collection2Select.dispatchEvent(new Event('change'));
+            }
+        }
+
+        async function handleCollectionSelection(event, collectionNumber) {
+            const collectionName = event.target.value;
+            const infoDiv = document.getElementById(`info${collectionNumber}`);
+            
+            if (collectionName) {
+                try {
+                    const collection = availableCollections.find(c => c.name === collectionName);
+                    if (!collection) {
+                        throw new Error('Collection not found');
+                    }
+
+                    // Load the actual collection data
+                    infoDiv.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; margin: 10px auto;"></div>Loading...';
+                    infoDiv.style.display = 'block';
+
+                    const response = await fetch(`${API_BASE_URL}/collections/${collectionName}`);
+                    if (!response.ok) {
+                        throw new Error(`Failed to load collection data: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    infoDiv.innerHTML = `
+                        <strong>Selected:</strong> ${collectionName}<br>
+                        <strong>Date:</strong> ${formatTimestamp(collectionName)}<br>
+                        <strong>Courses:</strong> ${collection.documentCount}<br>
+                        <strong>Loaded:</strong> ${data.length} courses
+                    `;
+                    infoDiv.style.background = '#e3f2fd';
+                    infoDiv.style.color = '#1976d2';
+                    
+                    if (collectionNumber === 1) {
+                        selectedCollection1 = { name: collectionName, data: data, info: collection };
+                    } else {
+                        selectedCollection2 = { name: collectionName, data: data, info: collection };
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading collection:', error);
+                    infoDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                    infoDiv.style.background = '#f8d7da';
+                    infoDiv.style.color = '#721c24';
+                    infoDiv.style.display = 'block';
+                }
+            } else {
+                infoDiv.style.display = 'none';
+                if (collectionNumber === 1) {
+                    selectedCollection1 = null;
+                } else {
+                    selectedCollection2 = null;
+                }
+            }
+            
+            checkIfReadyToCompare();
+        }
+
+        function checkIfReadyToCompare() {
+            const compareBtn = document.getElementById('compareBtn');
+            const canCompare = selectedCollection1 && selectedCollection2 && selectedCollection1.name !== selectedCollection2.name;
+            compareBtn.disabled = !canCompare;
+            
+            if (selectedCollection1 && selectedCollection2 && selectedCollection1.name === selectedCollection2.name) {
+                compareBtn.textContent = 'Please select different collections';
+            } else {
+                compareBtn.textContent = 'Compare Collections';
+            }
+        }
+
+        function extractOutcomes(course) {
+            const outcomes = course.outcomes || [];
+            return outcomes.map(o => ({
+                title: o.value || o.title,
+                graduateAttributeIndicator: o.graduateAttributeIndicator,
+                graduateAttributeMapLevel: o.graduateAttributeMapLevel
+            }));
+        }
+
+        function compareOutcomes(list1, list2) {
+            const diffs = [];
+            const maxLen = Math.max(list1.length, list2.length);
+            
+            for (let i = 0; i < maxLen; i++) {
+                const o1 = i < list1.length ? list1[i] : null;
+                const o2 = i < list2.length ? list2[i] : null;
+                
+                if (JSON.stringify(o1) !== JSON.stringify(o2)) {
+                    diffs.push({ index: i, previous: o1, current: o2 });
+                }
+            }
+            
+            return diffs;
+        }
+
+        function compareAllCourses(data1, data2) {
+            const courseMap1 = {};
+            const courseMap2 = {};
+            
+            data1.forEach(course => {
+                if (course.code) courseMap1[course.code] = course;
+            });
+            
+            data2.forEach(course => {
+                if (course.code) courseMap2[course.code] = course;
+            });
+            
+            const allCodes = [...new Set([...Object.keys(courseMap1), ...Object.keys(courseMap2)])].sort();
+            const comparisons = {};
+            
+            allCodes.forEach(code => {
+                if (courseMap1[code] && courseMap2[code]) {
+                    const outcomes1 = extractOutcomes(courseMap1[code]);
+                    const outcomes2 = extractOutcomes(courseMap2[code]);
+                    const diffs = compareOutcomes(outcomes1, outcomes2);
+                    
+                    if (diffs.length > 0) {
+                        comparisons[code] = {
+                            diffs: diffs,
+                            previousCourse: courseMap1[code],
+                            currentCourse: courseMap2[code]
+                        };
+                    }
+                }
+            });
+            
+            return comparisons;
+        }
+
+        function compareCollections() {
+            if (!selectedCollection1 || !selectedCollection2) return;
+            
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
+            const pdfExportBtn = document.getElementById('pdfExportBtn');
+            
+            // Show loading
+            resultsContent.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Comparing course collections...
+                </div>
+            `;
+            resultsSection.style.display = 'block';
+            pdfExportBtn.disabled = true;
+            
+            // Simulate processing delay for better UX
+            setTimeout(() => {
+                const comparisons = compareAllCourses(selectedCollection1.data, selectedCollection2.data);
+                currentComparisons = comparisons;
+                displayResults(comparisons);
+                pdfExportBtn.disabled = Object.keys(comparisons).length === 0;
+            }, 1000);
+        }
+
+        function displayResults(comparisons) {
+            const resultsContent = document.getElementById('resultsContent');
+            let html = `
+                <div class="comparison-info">
+                <p><strong>Previous Data:</strong> ${selectedCollection1.name}</p>
+                <p><strong>Previous Date:</strong> ${formatTimestamp(selectedCollection1.name)}</p>
+                <p><strong>Current Data:</strong> ${selectedCollection2.name}</p>
+                <p><strong>Current Date:</strong> ${formatTimestamp(selectedCollection2.name)}</p>
+                <p><strong>Total Courses with Changes:</strong> ${Object.keys(comparisons).length}</p>
+                </div>
+            `;
+
+            if (Object.keys(comparisons).length === 0) {
+                html += `
+                <div class="no-differences">
+                    ✅ No differences found in learning outcomes between the selected collections!
+                </div>
+                `;
+            } else {
+                Object.entries(comparisons).forEach(([courseCode, comparisonData]) => {
+                    const { diffs, previousCourse, currentCourse } = comparisonData;
+                    
+                    // Pull descriptions (or N/A)
+                    const prevDesc = previousCourse.description || 'N/A';
+                    const currDesc = currentCourse.description || 'N/A';
+
+                    html += `
+                        <div class="course-diff">
+                        <div class="course-header">${courseCode}</div>
+                        
+                        <!-- DESCRIPTION -->
+                        <div class="desc-text diff-values">
+                            <div class="diff-value previous">
+                            <strong>Previous Short Description:</strong><br>${prevDesc}
+                            </div>
+                            <div class="diff-value current">
+                            <strong>Current Short Description:</strong><br>${currDesc}
+                            </div>
+                        </div>
+                    `;
+
+                    // Now your existing diff-by-outcome loop:
+                    diffs.forEach(diff => {
+                        const prevTitle = diff.previous?.title || 'N/A';
+                        const currTitle = diff.current?.title || 'N/A';
+
+                        const prevGAI = GAI_MAPPINGS[diff.previous?.graduateAttributeIndicator]
+                        || diff.previous?.graduateAttributeIndicator
+                        || 'N/A';
+                        const currGAI = GAI_MAPPINGS[diff.current?.graduateAttributeIndicator]
+                        || diff.current?.graduateAttributeIndicator
+                        || 'N/A';
+
+                        const prevGAML = GAML_MAPPINGS[diff.previous?.graduateAttributeMapLevel]
+                        || diff.previous?.graduateAttributeMapLevel
+                        || 'N/A';
+                        const currGAML = GAML_MAPPINGS[diff.current?.graduateAttributeMapLevel]
+                        || diff.current?.graduateAttributeMapLevel
+                        || 'N/A';
+
+                        html += `
+                        <div class="outcome-diff">
+                            <div class="outcome-title">Outcome #${diff.index + 1}</div>
+
+                            <div class="diff-item">
+                            <div class="diff-label">Title</div>
+                            <div class="diff-values">
+                                <div class="diff-value previous"><strong>Previous:</strong><br>${prevTitle}</div>
+                                <div class="diff-value current"><strong>Current:</strong><br>${currTitle}</div>
+                            </div>
+                            </div>
+
+                            <div class="diff-item">
+                            <div class="diff-label">Graduate Attribute Indicator</div>
+                            <div class="diff-values">
+                                <div class="diff-value previous"><strong>Previous:</strong><br>${prevGAI}</div>
+                                <div class="diff-value current"><strong>Current:</strong><br>${currGAI}</div>
+                            </div>
+                            </div>
+
+                            <div class="diff-item">
+                            <div class="diff-label">Graduate Attribute Map Level</div>
+                            <div class="diff-values">
+                                <div class="diff-value previous"><strong>Previous:</strong><br>${prevGAML}</div>
+                                <div class="diff-value current"><strong>Current:</strong><br>${currGAML}</div>
+                            </div>
+                            </div>
+                        </div>
+                        `;
+                    });
+
+                    html += `</div>`;  // close .course-diff
+                });
+            }
+
+            resultsContent.innerHTML = html;
+        }
+
+        async function exportToPDF() {
+            if (!currentComparisons || Object.keys(currentComparisons).length === 0) {
+                alert('No comparison data available to export.');
+                return;
+            }
+
+            const pdfExportBtn = document.getElementById('pdfExportBtn');
+            const originalText = pdfExportBtn.innerHTML;
+            
+            try {
+                pdfExportBtn.disabled = true;
+                pdfExportBtn.innerHTML = '⏳ Generating PDF...';
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // PDF configuration
+                const pageWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const margin = 20;
+                const contentWidth = pageWidth - (2 * margin);
+                let yPosition = margin;
+                
+                // Helper function to add text with word wrapping
+                function addWrappedText(text, x, y, maxWidth, fontSize = 10) {
+                    doc.setFontSize(fontSize);
+                    const lines = doc.splitTextToSize(text, maxWidth);
+                    
+                    lines.forEach((line, index) => {
+                        if (y + (index * 7) > pageHeight - margin) {
+                            doc.addPage();
+                            y = margin;
+                        }
+                        doc.text(line, x, y + (index * 7));
+                    });
+                    
+                    return y + (lines.length * 7);
+                }
+
+                // Helper function to check if we need a new page
+                function checkPageBreak(requiredSpace) {
+                    if (yPosition + requiredSpace > pageHeight - margin) {
+                        doc.addPage();
+                        yPosition = margin;
+                    }
+                }
+
+                // Title
+                doc.setFontSize(20);
+                doc.setFont(undefined, 'bold');
+                doc.text('Course Comparison Report', margin, yPosition);
+                yPosition += 15;
+
+                // Comparison info
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'normal');
+                yPosition = addWrappedText(`Previous Data: ${selectedCollection1.name}`, margin, yPosition, contentWidth, 12);
+                yPosition += 5;
+                yPosition = addWrappedText(`Previous Date: ${formatTimestamp(selectedCollection1.name)}`, margin, yPosition, contentWidth, 12);
+                yPosition += 5;
+                yPosition = addWrappedText(`Current Data: ${selectedCollection2.name}`, margin, yPosition, contentWidth, 12);
+                yPosition += 5;
+                yPosition = addWrappedText(`Current Date: ${formatTimestamp(selectedCollection2.name)}`, margin, yPosition, contentWidth, 12);
+                yPosition += 5;
+                yPosition = addWrappedText(`Total Courses with Changes: ${Object.keys(currentComparisons).length}`, margin, yPosition, contentWidth, 12);
+                yPosition += 15;
+
+                // Course differences
+                Object.entries(currentComparisons).forEach(([courseCode, comparisonData]) => {
+                    const { diffs, previousCourse, currentCourse } = comparisonData;
+                    
+                    checkPageBreak(50);
+                    
+                    // Course header
+                    doc.setFontSize(16);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(courseCode, margin, yPosition);
+                    yPosition += 10;
+                    
+                    // Description comparison
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('Course Description Changes:', margin, yPosition);
+                    yPosition += 8;
+                    
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(10);
+                    
+                    const prevDesc = previousCourse.description || 'N/A';
+                    const currDesc = currentCourse.description || 'N/A';
+                    
+                    if (prevDesc !== currDesc) {
+                        yPosition = addWrappedText(`Previous: ${prevDesc}`, margin + 5, yPosition, contentWidth - 5, 10);
+                        yPosition += 3;
+                        yPosition = addWrappedText(`Current: ${currDesc}`, margin + 5, yPosition, contentWidth - 5, 10);
+                        yPosition += 8;
+                    } else {
+                        yPosition = addWrappedText('No description changes', margin + 5, yPosition, contentWidth - 5, 10);
+                        yPosition += 8;
+                    }
+
+                    // Learning outcomes
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('Learning Outcome Changes:', margin, yPosition);
+                    yPosition += 8;
+
+                    diffs.forEach((diff, index) => {
+                        checkPageBreak(60);
+                        
+                        doc.setFontSize(11);
+                        doc.setFont(undefined, 'bold');
+                        doc.text(`Outcome #${diff.index + 1}:`, margin + 5, yPosition);
+                        yPosition += 8;
+                        
+                        doc.setFont(undefined, 'normal');
+                        doc.setFontSize(9);
+                        
+                        // Title
+                        const prevTitle = diff.previous?.title || 'N/A';
+                        const currTitle = diff.current?.title || 'N/A';
+                        
+                        doc.text('Title:', margin + 10, yPosition);
+                        yPosition += 5;
+                        yPosition = addWrappedText(`Previous: ${prevTitle}`, margin + 15, yPosition, contentWidth - 15, 9);
+                        yPosition += 2;
+                        yPosition = addWrappedText(`Current: ${currTitle}`, margin + 15, yPosition, contentWidth - 15, 9);
+                        yPosition += 5;
+                        
+                        // Graduate Attribute Indicator
+                        const prevGAI = GAI_MAPPINGS[diff.previous?.graduateAttributeIndicator] || diff.previous?.graduateAttributeIndicator || 'N/A';
+                        const currGAI = GAI_MAPPINGS[diff.current?.graduateAttributeIndicator] || diff.current?.graduateAttributeIndicator || 'N/A';
+                        
+                        doc.text('Graduate Attribute Indicator:', margin + 10, yPosition);
+                        yPosition += 5;
+                        yPosition = addWrappedText(`Previous: ${prevGAI}`, margin + 15, yPosition, contentWidth - 15, 9);
+                        yPosition += 2;
+                        yPosition = addWrappedText(`Current: ${currGAI}`, margin + 15, yPosition, contentWidth - 15, 9);
+                        yPosition += 5;
+                        
+                        // Graduate Attribute Map Level
+                        const prevGAML = GAML_MAPPINGS[diff.previous?.graduateAttributeMapLevel] || diff.previous?.graduateAttributeMapLevel || 'N/A';
+                        const currGAML = GAML_MAPPINGS[diff.current?.graduateAttributeMapLevel] || diff.current?.graduateAttributeMapLevel || 'N/A';
+                        
+                        doc.text('Graduate Attribute Map Level:', margin + 10, yPosition);
+                        yPosition += 5;
+                        yPosition = addWrappedText(`Previous: ${prevGAML}`, margin + 15, yPosition, contentWidth - 15, 9);
+                        yPosition += 2;
+                        yPosition = addWrappedText(`Current: ${currGAML}`, margin + 15, yPosition, contentWidth - 15, 9);
+                        yPosition += 10;
+                    });
+                    
+                    yPosition += 5;
+                });
+
+                // Generate filename with timestamp
+                const now = new Date();
+                const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const filename = `course-comparison-${timestamp}.pdf`;
+                
+                // Save the PDF
+                doc.save(filename);
+                
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('Error generating PDF. Please try again.');
+            } finally {
+                pdfExportBtn.disabled = false;
+                pdfExportBtn.innerHTML = originalText;
+            }
+        }
+
+        // Initialize the application when the page loads
+        document.addEventListener('DOMContentLoaded', init);
+        </script>
+</body>
+</html>

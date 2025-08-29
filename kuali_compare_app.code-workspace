@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../kuali_compare_py/course-comparison-backend"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "kuali_compare_app",
+		"liveServer.settings.port": 5501
+	}
+}
