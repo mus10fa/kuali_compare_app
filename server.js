@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // MongoDB connection - Update with your connection string
-const MONGODB_URI = "mongodb+srv://mus10faa:kualijson@kualicompare.ygobilo.mongodb.net/?retryWrites=true&w=majority&appName=kualicompare";
+const MONGODB_URI = "";
 const DATABASE_NAME = "kuali";
 
 let db;
@@ -228,3 +228,4 @@ MongoClient.connect(MONGODB_URI)
     });
   })
   .catch(error => console.error('❌ MongoDB connection error:', error));
+
